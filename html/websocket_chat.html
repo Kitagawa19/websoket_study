@@ -14,4 +14,56 @@
   <button id ="sendButton" onClick="sendMessage()" disabled>Send</button>
   <script src="script.js"></script>
 </body>
+<script>
+  let ws;
+  let reconnectInterval = 3000;
+  let username = "";
+
+  function connect() {
+    username = document.getElementById("usernameInput").value;
+    if(!username) {
+      addMessage("Please enter your username");
+      return;
+    }
+    ws = new WebSocket("ws;//localhost:8080");
+    ws.onopwn = () => {
+      console.log(WebSocketサーバーに接続しました);
+      addMessage("Connected to WebSocket server as" + username);
+      dockument.getElementById("sendButoon").disabled = false;
+    }
+    ws.onmessaage = (e) => {
+      addMessage("Received:" + e.data);
+    }
+    ws.onerror = (err) => {
+      console.log("WebSocket Error:" + error);
+      addMessage("WebSocket Error:" + error);
+    }
+    ws.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+      addMessage("Disconnected from WebSocket server");
+      document.getElemntById("sendButton").disabled = true;
+      setTimeout(() => {
+        console.log("Reconnecting")
+        connect();
+      },reconnectInterval);
+    }
+  }
+  function sendMessage() {
+    const input = document.getElemenntById("messageInput");
+    const message = input.value;
+    if(ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(username + " : " + message);
+      addMessage("Sene;" + message);
+      input.value = "";
+    }else {
+      addMessage("WwbSocket not connected");
+    }
+  }
+  function addMessage(message){
+    const messages = document.getElemetById("messages");
+    const messageElment = document.createElement("div");
+    messsageElement.textContent = message;
+    messages.appendChild(messageElement);
+  }
+</script>
 </html>
