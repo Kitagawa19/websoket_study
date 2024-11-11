@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>WebSocket Chat</h1>
+  <input type="text" id="usernameInput" placeholder="Enter your username">
+  <button onclick="connect()">Connect</button>
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Enter your message">
+  <button id="sendButton" onclick="sendMessage()" disabled>Send</button>
+</body>
+<script>
+  let ws;
+  let reconnectInterval = 3000;
+  let username = "";
+
+  function connect() {
+    username = document.getElementById("usernameInput").value;
+    if (!username) {
+      addMessage("Please enter your username");
+      return;
+    }
+    ws = new WebSocket("ws://localhost:8080");
+
+    ws.onopen = () => {
+      console.log("WebSocketサーバーに接続しました");
+      addMessage("Connected to WebSocket server as " + username);
+      document.getElementById("sendButton").disabled = false;
+
+      // 接続時に "connect" タイプのメッセージを送信
+      const connectMsg = JSON.stringify({ type: "connect", username: username });
+      ws.send(connectMsg);
+    };
+
+    ws.onmessage = (e) => {
+      try{
+        const msgDatta = JSON.parse(e.data);
+        let formattedMessage;
+        if (msgData.type === "connect") {
+          formattedMessage = `User ${msgData.username} has joined the chat`;
+        } else if ( msgData.Type === "disconnect") {
+          formattedMessage = `User ${msgData.username} has left the chat`;
+        } else {
+          formattedMessage = `Receiced ${msgData.text} from ${msgData.username}`;
+        }
+        addMessage(formattedMessage);
+      }catch(error) {
+        console.log("Faled to patse message",e.data);
+        addMessage("Received: " + e.data);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.log("WebSocket Error: " + err);
+      addMessage("WebSocket Error: " + err);
+    };
+
+    ws.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+      addMessage("Disconnected from WebSocket server");
+      document.getElementById("sendButton").disabled = true;
+      setTimeout(() => {
+        console.log("Reconnecting...");
+        connect();
+      }, reconnectInterval);
+    };
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const message = input.value;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      // "message" タイプのメッセージを送信
+      const msgData = JSON.stringify({ type: "message", username: username, text: message });
+      ws.send(msgData);
+      addMessage("Sent: " + message);
+      input.value = "";
+    } else {
+      addMessage("WebSocket not connected");
+    }
+  }
+
+  function addMessage(message) {
+    const messages = document.getElementById("messages");
+    const messageElement = document.createElement("div");
+    messageElement.textContent = message;
+    messages.appendChild(messageElement);
+  }
+</script>
+
+</html>
