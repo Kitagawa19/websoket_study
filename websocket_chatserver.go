@@ -50,17 +50,23 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
         }
 
         // メッセージを受け取ったことをログに記録
-        log.Printf("Received message from", msg.Username, msg.Text)
+        log.Printf("Received message from %s: %s", msg.Username, msg.Text)
 
-        // メッセージをブロードキャストする
-        broadcast <- msg
+        // メッセージタイプに応じて処理を分ける
+        if msg.Type == "message" {
+            // "message" タイプのメッセージのみブロードキャスト
+            broadcast <- msg
+        } else {
+            // 他のタイプのメッセージの処理が必要であれば、ここで実装
+            log.Printf("Received non-broadcast message type: %s from %s", msg.Type, msg.Username)
+        }
     }
 }
 
 func handleMessage() {
     for {
         msg := <-broadcast
-        log.Printf("Broadcasting message from", msg.Username, msg.Text)
+        log.Printf("Broadcasting message from %s: %s", msg.Username, msg.Text)
 
         for client := range clients {
             err := client.WriteJSON(msg)
